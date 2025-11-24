@@ -1,0 +1,56 @@
+/* Estilos específicos para a página home */
+
+.homeContainer {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.contentWrapper {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  text-align: center;
+}
+
+.initiateButton {
+  padding: 0.75rem 3rem;
+  border: 2px solid var(--color-primary-teal);
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: var(--color-primary-teal);
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.initiateButton:hover {
+  background-color: rgba(32, 178, 170, 0.1);
+  box-shadow: 0 10px 25px rgba(32, 178, 170, 0.2);
+  transform: translateY(-2px);
+}
+
