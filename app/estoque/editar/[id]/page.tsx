@@ -2,14 +2,26 @@
 
 import Header from "@/app/components/Header";
 import Footer from "@/app/components/Footer";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Swal from "sweetalert2";
 import { inventoryApi } from "@/app/services/inventoryApi";
 
-export default function AdicionarItem() {
+interface FormData {
+  categoria: string;
+  lote: string;
+  observacao: string;
+  produto: string;
+  quadra: string;
+  codigoBarras: string;
+}
+
+export default function EditarItem() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
+  const params = useParams();
+  const id = params.id as string;
+
+  const [formData, setFormData] = useState<FormData>({
     categoria: "",
     lote: "",
     observacao: "",
@@ -17,7 +29,37 @@ export default function AdicionarItem() {
     quadra: "",
     codigoBarras: "",
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    loadItem();
+  }, [id]);
+
+  const loadItem = async () => {
+    try {
+      setLoading(true);
+      const item = await inventoryApi.getById(parseInt(id));
+      setFormData({
+        categoria: item.categoria,
+        lote: item.lote,
+        observacao: item.observacao,
+        produto: item.produto,
+        quadra: item.quadra,
+        codigoBarras: item.codigoBarras,
+      });
+    } catch (error) {
+      Swal.fire({
+        title: "Erro",
+        text: "Erro ao carregar item",
+        icon: "error",
+      }).then(() => {
+        router.push("/estoque");
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -40,11 +82,11 @@ export default function AdicionarItem() {
     }
 
     try {
-      setLoading(true);
-      await inventoryApi.create(formData);
+      setSaving(true);
+      await inventoryApi.update(parseInt(id), formData);
       Swal.fire({
         title: "Sucesso",
-        text: "Item cadastrado com sucesso",
+        text: "Item atualizado com sucesso",
         icon: "success",
       }).then(() => {
         router.push("/estoque");
@@ -52,24 +94,32 @@ export default function AdicionarItem() {
     } catch (error) {
       Swal.fire({
         title: "Erro",
-        text: "Erro ao cadastrar item",
+        text: "Erro ao atualizar item",
         icon: "error",
       });
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
   const handleLimpar = () => {
-    setFormData({
-      categoria: "",
-      lote: "",
-      observacao: "",
-      produto: "",
-      quadra: "",
-      codigoBarras: "",
-    });
+    loadItem();
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main
+          className="flex-1 p-8 flex items-center justify-center"
+          style={{ backgroundColor: "var(--color-primary-black)" }}
+        >
+          <p className="text-white text-lg">Carregando item...</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -80,9 +130,7 @@ export default function AdicionarItem() {
       >
         <div className="max-w-6xl mx-auto">
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Primeira linha: Categoria, Lote, Observação */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Categoria */}
               <div className="flex flex-col gap-2">
                 <label
                   htmlFor="categoria"
@@ -114,7 +162,6 @@ export default function AdicionarItem() {
                 </select>
               </div>
 
-              {/* Lote */}
               <div className="flex flex-col gap-2">
                 <label htmlFor="lote" className="text-white font-semibold">
                   Lote
@@ -143,7 +190,6 @@ export default function AdicionarItem() {
                 </select>
               </div>
 
-              {/* Observação */}
               <div className="flex flex-col gap-2">
                 <label
                   htmlFor="observacao"
@@ -168,9 +214,7 @@ export default function AdicionarItem() {
               </div>
             </div>
 
-            {/* Segunda linha: Produto, Quadra, Código de Barras */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Produto */}
               <div className="flex flex-col gap-2">
                 <label htmlFor="produto" className="text-white font-semibold">
                   Produto
@@ -199,7 +243,6 @@ export default function AdicionarItem() {
                 </select>
               </div>
 
-              {/* Quadra */}
               <div className="flex flex-col gap-2">
                 <label htmlFor="quadra" className="text-white font-semibold">
                   Quadra
@@ -228,7 +271,6 @@ export default function AdicionarItem() {
                 </select>
               </div>
 
-              {/* Código de Barras */}
               <div className="flex flex-col gap-2">
                 <label
                   htmlFor="codigoBarras"
@@ -253,15 +295,14 @@ export default function AdicionarItem() {
               </div>
             </div>
 
-            {/* Botões */}
             <div className="flex gap-6 justify-between mt-12 flex-col-reverse sm:flex-row">
               <button
                 type="button"
                 onClick={() => router.push("/estoque")}
-                disabled={loading}
+                disabled={saving}
                 style={{
                   borderColor: "var(--color-primary-teal)",
-                  opacity: loading ? 0.5 : 1,
+                  opacity: saving ? 0.5 : 1,
                 }}
                 className="px-8 sm:px-12 py-2 border-2 rounded font-semibold transition-all text-white hover:bg-teal-900/20 text-sm sm:text-base cursor-pointer disabled:cursor-not-allowed"
               >
@@ -270,26 +311,26 @@ export default function AdicionarItem() {
               <div className="flex gap-6 flex-col-reverse sm:flex-row">
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={saving}
                   style={{
                     borderColor: "var(--color-primary-teal)",
-                    opacity: loading ? 0.5 : 1,
+                    opacity: saving ? 0.5 : 1,
                   }}
                   className="px-8 sm:px-12 py-2 border-2 rounded font-semibold transition-all text-white hover:bg-teal-900/20 text-sm sm:text-base cursor-pointer disabled:cursor-not-allowed"
                 >
-                  {loading ? "Cadastrando..." : "Cadastrar"}
+                  {saving ? "Salvando..." : "Salvar"}
                 </button>
                 <button
                   type="button"
                   onClick={handleLimpar}
-                  disabled={loading}
+                  disabled={saving}
                   style={{
                     borderColor: "var(--color-primary-teal)",
-                    opacity: loading ? 0.5 : 1,
+                    opacity: saving ? 0.5 : 1,
                   }}
                   className="px-8 sm:px-12 py-2 border-2 rounded font-semibold transition-all text-white hover:bg-teal-900/20 text-sm sm:text-base cursor-pointer disabled:cursor-not-allowed"
                 >
-                  Limpar
+                  Resetar
                 </button>
               </div>
             </div>

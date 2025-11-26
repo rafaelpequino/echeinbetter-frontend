@@ -3,7 +3,9 @@
 import Header from "@/app/components/Header";
 import Footer from "@/app/components/Footer";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
+import { inventoryApi } from "@/app/services/inventoryApi";
 
 interface Item {
   id: number;
@@ -17,37 +19,78 @@ interface Item {
 
 export default function Estoque() {
   const router = useRouter();
-  
-  // Dados de exemplo
-  const [items] = useState<Item[]>([
-    {
-      id: 1,
-      categoria: "Eletrônicos",
-      lote: "Lote 1",
-      observacao: "Em bom estado",
-      produto: "Produto 1",
-      quadra: "A",
-      codigoBarras: "123456789",
-    },
-    {
-      id: 2,
-      categoria: "Alimentos",
-      lote: "Lote 2",
-      observacao: "Verificar validade",
-      produto: "Produto 2",
-      quadra: "B",
-      codigoBarras: "987654321",
-    },
-    {
-      id: 3,
-      categoria: "Eletrônicos",
-      lote: "Lote 1",
-      observacao: "Requer manutenção",
-      produto: "Produto 3",
-      quadra: "A",
-      codigoBarras: "555666777",
-    },
-  ]);
+  const [items, setItems] = useState<Item[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadItems();
+  }, []);
+
+  const loadItems = async () => {
+    try {
+      setLoading(true);
+      const data = await inventoryApi.getAll();
+      setItems(data);
+    } catch (error) {
+      Swal.fire({
+        title: "Erro",
+        text: "Erro ao carregar itens do estoque",
+        icon: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (id: number) => {
+    router.push(`/estoque/editar/${id}`);
+  };
+
+  const handleDelete = async (id: number, productName: string) => {
+    const result = await Swal.fire({
+      title: "Confirmar exclusão",
+      text: `Tem certeza que deseja deletar "${productName}"?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Deletar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await inventoryApi.delete(id);
+        setItems(items.filter(item => item.id !== id));
+        Swal.fire({
+          title: "Sucesso",
+          text: "Item deletado com sucesso",
+          icon: "success",
+        });
+      } catch (error) {
+        Swal.fire({
+          title: "Erro",
+          text: "Erro ao deletar item",
+          icon: "error",
+        });
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main
+          className="flex-1 p-8 flex items-center justify-center"
+          style={{ backgroundColor: "var(--color-primary-black)" }}
+        >
+          <p className="text-white text-lg">Carregando estoque...</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -101,6 +144,7 @@ export default function Estoque() {
                     <td className="px-4 py-3 text-white text-sm">{item.observacao}</td>
                     <td className="px-4 py-3 text-center flex gap-3 justify-center">
                       <button
+                        onClick={() => handleEdit(item.id)}
                         style={{
                           borderColor: "var(--color-primary-teal)",
                           color: "var(--color-primary-teal)",
@@ -110,6 +154,7 @@ export default function Estoque() {
                         Editar
                       </button>
                       <button
+                        onClick={() => handleDelete(item.id, item.produto)}
                         style={{
                           borderColor: "#ef4444",
                           color: "#ef4444",
