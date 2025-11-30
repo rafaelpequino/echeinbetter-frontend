@@ -42,7 +42,26 @@ const mapFromInventory = (inventory: Inventory): Item => ({
 
 export const inventoryApi = {
   async getAll(): Promise<Item[]> {
-    const response = await fetch(`${API_URL}/inventory`);
+    const response = await fetch(`${API_URL}/inventory/search`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    });
+    if (!response.ok) throw new Error('Erro ao buscar itens');
+    const data = await response.json();
+    return data.map(mapFromInventory);
+  },
+
+  async searchByBarCode(barCode: string): Promise<Item[]> {
+    const response = await fetch(`${API_URL}/inventory/search`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ barCode: barCode || undefined }),
+    });
     if (!response.ok) throw new Error('Erro ao buscar itens');
     const data = await response.json();
     return data.map(mapFromInventory);

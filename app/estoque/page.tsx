@@ -21,6 +21,7 @@ export default function Estoque() {
   const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchBarCode, setSearchBarCode] = useState("");
 
   useEffect(() => {
     loadItems();
@@ -39,6 +40,20 @@ export default function Estoque() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSearchBarCode = async (barCode: string) => {
+    setSearchBarCode(barCode);
+    try {
+      const data = await inventoryApi.searchByBarCode(barCode);
+      setItems(data);
+    } catch (error) {
+      Swal.fire({
+        title: "Erro",
+        text: "Erro ao buscar itens por código de barras",
+        icon: "error",
+      });
     }
   };
 
@@ -113,6 +128,26 @@ export default function Estoque() {
             >
               + Novo Item
             </button>
+          </div>
+
+          {/* Input de busca por código de barras */}
+          <div className="mb-8">
+            <input
+              type="text"
+              placeholder="Buscar por código de barras..."
+              value={searchBarCode}
+              onChange={(e) => handleSearchBarCode(e.target.value)}
+              style={{
+                backgroundColor: "#1a1a1a",
+                borderColor: "var(--color-primary-teal)",
+              }}
+              className="w-full px-4 py-3 border-2 rounded text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all"
+            />
+            {searchBarCode && (
+              <p className="mt-3 text-sm" style={{ color: "var(--color-primary-teal)" }}>
+                Buscando pelo código: <span className="font-semibold">{searchBarCode}</span>
+              </p>
+            )}
           </div>
 
           {/* Tabela responsiva */}
